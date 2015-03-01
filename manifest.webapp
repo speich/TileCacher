@@ -1,0 +1,29 @@
+{
+  "version": "0.1",
+  "name": "TileCacher",
+  "description": "Make map tiles available offline with indexedDb",
+  "launch_path": "/index.html",
+  "icons": {
+    "64": "/app/icon-ente-64.png",
+    "128": "/app/icon-ente-128.png",
+    "256": "/app/icon-ente-256.png"
+  },
+  "permissions": {
+  		"storage": {
+  			"description": "Cache map tiles offline in indexedDB"
+  		},
+  		"tcp-socket" : {
+      	"description" : "Used to implement a proxy to load images (map tiles) without CORS on tile server."
+      }
+  },
+  "developer": {
+    "name": "Simon Speich",
+    "url": "http://www.speich.net"
+  },
+  "locales": {
+    "de": {
+      "description": "Macht Kartenkacheln ohne Internetverbindung verfügbar dank indexedDb"
+	 }
+  },
+  "default_locale": "en"
+}
