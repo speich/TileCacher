@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+</head>
+<body>
+<menu type="toolbar">
+    <button>Add</button>
+    <button>Delete</button>
+    <button>Save</button>
+</menu>
+<form>
+    <fieldset>Service
+        <label for="frmServiceName">Name of service</label>
+        <input id="frmServiceName" type="text" value="USGSTopo Basemap"/>
+        <label for="frmServiceUrl">Service url</label>
+        <input id="frmServiceUrl" type="text"
+               value="http://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}"/>
+        <label for="frmServiceProxy">Service proxy [optional]</label>
+        <input id="frmServiceProxy" type="text" value="imageProxy.php"/>
+        <label for="frmServiceAttribution">Service attribution to display on map [optional]</label>
+        <input id="frmServiceAttribution" type="text" value="imageProxy.php"/>
+        <label for="frmServiceType">Type of map service</label>
+        <input id="frmServiceType" type="text" value="imageProxy.php"/>
+        <label for="frmServiceSubdomains">Subdomains [optiona]</label>
+        <input id="frmServiceSubdomains" type="text" value="'map01', 'map02', 'map03', 'map04'"/>
+        <label for="frmServiceCrossOrigin">Crossorigin [optional]</label>
+        <input id="frmServiceCrossOrigin" type="text" value="imageProxy.php"/>
+        <label for="frmServiceReferrer">Referrer [optional]</label>
+        <input id="frmServiceReferrer" type="text" value="imageProxy.php"/>
+    </fieldset>
+
+    <fieldset>Map options
+        <label for="frmMapZoom">Initial zoom [optional]</label>
+        <input id="frmMapZoom" type="text" value="1"/>
+        <label for="frmMapZoomRange">Zoom range [optional]</label>
+        <input id="frmMapZoomRange" type="range" min="1" max="18"/>
+        <label for="frmMapZoomOffset">Zooom offset [optional]</label>
+        <input id="frmMapZoomOffset" type="text" value="0"/>
+        <label for="frmMapCenter">Center coordinates [optional]</label>
+        <input id="frmMapCenter" type="text" value="imageProxy.php"/>
+    </fieldset>
+    <fieldset>
+        Service Info:
+        <label>Number of cached tiles</label>
+        <label>Database name %appData%</label>
+        <label>Total MB of cachced tiles</label>
+    </fieldset>
+
+</form>
+
+</body>
+</html>
