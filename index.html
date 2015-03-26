@@ -46,6 +46,7 @@ h2 {
 
 <script type="text/javascript">
 var dojoConfig = {
+	debug: true,
 	async: true,
 	packages: [
 		{name: 'TileCacher', location: '../../lib/TileCacher'}
@@ -64,9 +65,9 @@ require([
 	'TileCacher/TileCache',
 	'TileCacher/MenuControl',
 	'TileCacher/FormStoreControl',
-	'lib/Leaflet/leaflet.js',
+	'/lib/Leaflet/leaflet-src.js',
 	'dojo/domReady!'
-], function(require, lang, domConstruct, topic, IndexedDbTileStore, TileLayerStore, TileCache, FormStoreControl) {
+], function(require, lang, domConstruct, topic, IndexedDbTileStore, TileLayerStore, TileCache, MenuControl, FormStoreControl, L) {
 
 	require(['' +
 		'lib/Leaflet/plugins/draw/leaflet.draw.js',
@@ -84,13 +85,13 @@ require([
 		// When adding a new layer to the layersConfig object, update indexedDb version, which calls onupgradeneeded to add new object store
 		// e.g. update app.version number or delete whole db
 
-		//window.indexedDB.deleteDatabase('tileStorage');
+	//	window.indexedDB.deleteDatabase('tileStorage');
 
  		var layersConfig = {
 			'Queensland Topographic': {
 				url: 'https://geospatial.information.qld.gov.au/ArcGIS/rest/services/QLD/QTopoBase_WebM/MapServer/tile/{z}/{y}/{x}',
 				options: {
-					//cacheOnly: true,
+					//useCacheOnly: true,
 					tms: false,
 					maxZoom: 15,
 					minZoom: 4,			// service uses wrong z for tiles
@@ -248,12 +249,13 @@ require([
 		});
 
 		app.store.connect().then(function() {
-			var map, drawControl, drawnItems, form, legend, menu;
+			var map, drawControl, drawnItems, form, legend,	menu,
+				layer = app.layersConfig[app.baseLayerName];
 
 			// create map with layers after connection to db
 			map = app.map = L.map('map', {
-				center: app.layersConfig[app.baseLayerName].map.center || [45, 16],
-				zoom: app.layersConfig[app.baseLayerName].map.zoom || 0,
+				center: layer.map.center || [45, 16],
+				zoom: layer.map.zoom || 0,
 				layers: [app.currentBaseLayer, overlays['Drawn items']]	// current layer(s) to display after load
 			});
 
@@ -273,7 +275,7 @@ require([
 			map.addControl(drawControl);
 			L.control.layers(app.layers, app.overlays).addTo(map);
 
-			menu = new MenuControl();
+			//menu = new MenuControl();
 
 			legend = L.control({position: 'topright'});
 			legend.onAdd = function() {
@@ -302,7 +304,7 @@ require([
 				baselayerchange: function(evt) {
 					app.currentBaseLayer = evt.layer;
 					app.baseLayerName = evt.layer.name;
-					/** TODO enalbe this
+					/** TODO enable this
 					if (app.currentBaseLayer.map.center) {
 						app.map.setView(app.currentBaseLayer.map.center, app.currentBaseLayer.map.zoom);
 					}
