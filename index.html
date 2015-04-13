@@ -66,7 +66,7 @@ require([
 	'TileCacher/FormStoreControl',
 	'lib/Leaflet/leaflet.js',
 	'dojo/domReady!'
-], function(require, lang, domConstruct, topic, IndexedDbTileStore, TileLayerStore, TileCache, MenuControl, FormStoreControl) {
+], function(require, lang, domConstruct, topic, IndexedDbTileStore, TileLayerStore, TileCache, FormStoreControl) {
 
 	require(['' +
 		'lib/Leaflet/plugins/draw/leaflet.draw.js',
@@ -248,12 +248,13 @@ require([
 		});
 
 		app.store.connect().then(function() {
-			var map, drawControl, drawnItems, form, legend, menu;
+			var map, drawControl, drawnItems, form, legend,	menu,
+				layer = app.layersConfig[app.baseLayerName];
 
 			// create map with layers after connection to db
 			map = app.map = L.map('map', {
-				center: app.layersConfig[app.baseLayerName].map.center || [45, 16],
-				zoom: app.layersConfig[app.baseLayerName].map.zoom || 0,
+				center: layer.map.center || [45, 16],
+				zoom: layer.map.zoom || 0,
 				layers: [app.currentBaseLayer, overlays['Drawn items']]	// current layer(s) to display after load
 			});
 
@@ -278,8 +279,7 @@ require([
 			map.addControl(drawControl);
 			L.control.layers(app.layers, app.overlays).addTo(map);
 
-
-
+			menu = new MenuControl();
 
 			legend = L.control({position: 'topright'});
 			legend.onAdd = function() {
