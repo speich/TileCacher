@@ -66,7 +66,7 @@ require([
 	'TileCacher/FormStoreControl',
 	'lib/Leaflet/leaflet.js',
 	'dojo/domReady!'
-], function(require, lang, domConstruct, topic, IndexedDbTileStore, TileLayerStore, TileCache, FormStoreControl) {
+], function(require, lang, domConstruct, topic, IndexedDbTileStore, TileLayerStore, TileCache, MenuControl, FormStoreControl) {
 
 	require(['' +
 		'lib/Leaflet/plugins/draw/leaflet.draw.js',
@@ -258,6 +258,11 @@ require([
 			});
 
 			drawnItems = app.overlays['Drawn items'];
+
+            // add options menu to map
+            menu = new MenuControl();
+
+            // add draw controls to the map
 			drawControl = new L.Control.Draw({
 				edit: {
 					featureGroup: drawnItems
@@ -273,7 +278,8 @@ require([
 			map.addControl(drawControl);
 			L.control.layers(app.layers, app.overlays).addTo(map);
 
-			menu = new MenuControl();
+
+
 
 			legend = L.control({position: 'topright'});
 			legend.onAdd = function() {
