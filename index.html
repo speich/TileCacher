@@ -60,13 +60,12 @@ require([
 	'dojo/dom-construct',
 	'dojo/topic',
 	'TileCacher/IndexedDbTileStore',
-	'TileCacher/TileLayerStore',
+	'TileCacher/TileLayerOffline',
 	'TileCacher/TileCache',
-	'TileCacher/MenuControl',
 	'TileCacher/FormStoreControl',
 	'lib/Leaflet/leaflet.js',
 	'dojo/domReady!'
-], function(require, lang, domConstruct, topic, IndexedDbTileStore, TileLayerStore, TileCache, FormStoreControl) {
+], function(require, lang, domConstruct, topic, IndexedDbTileStore, TileLayerOffline, TileCache, FormStoreControl) {
 
 	require(['' +
 		'lib/Leaflet/plugins/draw/leaflet.draw.js',
@@ -83,9 +82,6 @@ require([
 		// IMPORTANT:
 		// When adding a new layer to the layersConfig object, update indexedDb version, which calls onupgradeneeded to add new object store
 		// e.g. update app.version number or delete whole db
-
-		//window.indexedDB.deleteDatabase('tileStorage');
-
  		var layersConfig = {
 			'Queensland Topographic': {
 				url: 'https://geospatial.information.qld.gov.au/ArcGIS/rest/services/QLD/QTopoBase_WebM/MapServer/tile/{z}/{y}/{x}',
@@ -93,14 +89,22 @@ require([
 					//cacheOnly: true,
 					tms: false,
 					maxZoom: 15,
-					minZoom: 4,			// service uses wrong z for tiles
-					zoomOffset: -4,
-					crossOrigin: 'Anonymous',
+					minZoom: 4,
+					zoomOffset: -4,	// service uses wrong z for tiles
+					crossOrigin: 'anonymous',
 					attribution: '© <a href="http://geospatial.information.qld.gov.au/ArcGIS/rest/services/QLD/QTopo_WebM/MapServer" target="_blank">State of Queensland</a> (Department of Natural Resources and Mines), 2014'
 				},
 				map: {
 					zoom: 5,
 					center: [-76, 136]
+				}
+			},
+			OpenStreetMap: {
+				url: 'http://{s}.tile.osm.org/{z}/{x}/{y}.png',
+				options: {
+					subdomains: ['a', 'b', 'c'],
+					crossOrigin: 'anonymous',	// CORS enabled image required for canvas.toDataUrl
+					attribution: '© <a href="http://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
 				}
 			},
 			'Sweden Map': {
@@ -130,18 +134,10 @@ require([
 					attribution: '© BLOM. Lantmäteriet/Metria/respektive kommun'
 				}
 			},
-			OpenStreetMap: {
-				url: 'http://{s}.tile.osm.org/{z}/{x}/{y}.png',
-				options: {
-					subdomains: ['a', 'b', 'c'],
-					crossOrigin: 'Anonymous',	// CORS enabled image required for canvas.toDataUrl
-					attribution: '© <a href="http://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
-				}
-			},
 			'ESRI WorldImagery': {
 				url: 'http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
 				options: {
-					crossOrigin: 'Anonymous',
+					crossOrigin: 'anonymous',
 					attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
 				}
 			},
@@ -153,12 +149,13 @@ require([
 				}
 			},
 			'Swisstopo': {
-				url: 'http://{s}.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/20140106/21781/{z}/{y}/{x}.jpeg',
+				url: 'http://{s}.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/20151231/{z}/{y}/{x}.jpeg',
 				options: {
 					proxy: 'imageProxy.php',
 					minZoom: 14,
 					maxZoom: 26,
-					subdomains: ['wmts0', 'wmts1', 'wmts2', 'wmts3', 'wmts4'],
+					zoomOffset: 14,
+					subdomains: ['wmts6', 'wmts7', 'wmts8', 'wmts9'],
 					referrer: 'http://map.geo.admin.ch',
 					attribution: '© Data: <a href="http://www.swisstopo.admin.ch/internet/swisstopo/en/home.html" target="_blank">swisstopo</a>'
 				}
@@ -208,7 +205,7 @@ require([
 
 						// store tiles of each layer in its own object store
 						this.store.objStores.push(name);	// set name of object store
-						this.layers[name] = new TileLayerStore(this.layersConfig[name].url, options, this.store);
+						this.layers[name] = new TileLayerOffline(this.layersConfig[name].url, options, this.store);
 					}
 				}
 				this.currentBaseLayer = this.layers[this.baseLayerName];
@@ -244,6 +241,8 @@ require([
 		app.init({
 			layersConfig: layersConfig,
 			baseLayerName: 'Queensland Topographic',
+			//baseLayerName: 'OpenStreetMap',
+			//baseLayerName: 'Swisstopo',
 			overlays: overlays
 		});
 
@@ -254,14 +253,14 @@ require([
 			// create map with layers after connection to db
 			map = app.map = L.map('map', {
 				center: layer.map.center || [45, 16],
-				zoom: layer.map.zoom || 0,
+				zoom: layer.map.zoom || 1,
 				layers: [app.currentBaseLayer, overlays['Drawn items']]	// current layer(s) to display after load
 			});
 
 			drawnItems = app.overlays['Drawn items'];
 
             // add options menu to map
-            menu = new MenuControl();
+//            menu = new MenuControl();
 
             // add draw controls to the map
 			drawControl = new L.Control.Draw({
@@ -279,21 +278,19 @@ require([
 			map.addControl(drawControl);
 			L.control.layers(app.layers, app.overlays).addTo(map);
 
-			menu = new MenuControl();
-
 			legend = L.control({position: 'topright'});
 			legend.onAdd = function() {
 				return domConstruct.create('div', {
-					innerHTML: '<label for="fldStorageOn">cache tiles</label><input type="checkbox" id="fldStorageOn">',
+					innerHTML: '<label for="fldStorageOn">cache tiles</label><input type="checkbox" id="fldStorageOn"><br>' +
+						'<input type="button" id="fldDelStorage" value="delete cache">',
 					className: 'storageControl'
 				});
 			};
 			legend.addTo(map);
-			document.getElementById('fldStorageOn').addEventListener('click', function() {
-				for (var layer in app.layers) {
-					if (app.layers.hasOwnProperty(layer) && app.layers[layer].options && app.layers[layer].store) {
-						app.layers[layer].options.cacheTiles = this.checked;
-					}
+			document.getElementById('fldDelStorage').addEventListener('click', function() {
+				if (window.confirm('Delete all offline map data ?')) {
+					window.indexedDB.deleteDatabase('tileStorage');
+					window.location.reload();
 				}
 			});
 

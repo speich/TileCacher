@@ -12,7 +12,7 @@ CACHE:
 # run.js
 
 # test.html
-# TileLayerStore.js
+# TileLayerOffline.js
 # TileStoreIndexedDb.js
 
 leaflet.css
