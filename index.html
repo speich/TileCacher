@@ -21,17 +21,21 @@ h2 {
 .leaflet-control-zoom-display {
 	background: white;
 }
+
 .storageControl, .storageForm {
-    padding: 6px 8px;
-    font-size: 1em;
-    background: white;
-    box-shadow: 0 0 15px rgba(0,0,0,0.2);
-    border-radius: 5px;
-}
-.storageForm {
-	visibility: visible;
+	padding: 6px 8px;
+	font-size: 1em;
+	background: white;
+	box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+	border-radius: 5px;
 	width: 140px;
+	display: none;
 }
+
+.display {
+	display: block;
+}
+
 .storageForm progress {
 	width: 100%;
 }
@@ -56,20 +60,15 @@ var dojoConfig = {
 <script type="text/javascript">
 require([
 	'require',
-	'dojo/_base/lang',
 	'dojo/dom-construct',
 	'dojo/topic',
-	'TileCacher/IndexedDbTileStore',
-	'TileCacher/TileLayerOffline',
-	'TileCacher/TileCache',
+	'TileCacher/app',
 	'TileCacher/FormStoreControl',
-	'lib/Leaflet/leaflet.js',
+	'lib/Leaflet/leaflet-src.js',
 	'dojo/domReady!'
-], function(require, lang, domConstruct, topic, IndexedDbTileStore, TileLayerOffline, TileCache, FormStoreControl) {
+], function(require, domConstruct, topic, app, FormStoreControl) {
 
-	require(['' +
-		'lib/Leaflet/plugins/draw/leaflet.draw.js',
-		'lib/Leaflet/plugins/zoomdisplay/leaflet.zoomdisplay.js'
+	require(['lib/Leaflet/plugins/draw/leaflet.draw.js', 'lib/Leaflet/plugins/zoomdisplay/leaflet.zoomdisplay.js'
 	], function() {
 
 		/******************************************************************
@@ -173,69 +172,6 @@ require([
 
 		overlays = {
 			'Drawn items': new L.FeatureGroup()
-		},
-
-		app = {
-			layers: {},
-			layersConfig: null,
-			overlays: null,
-			currentBaseLayer: null,
-			baseLayerName: '',
-			errorTileUrl: 'app/icon-ente-256.png',
-			rectangleBounds: null,
-			store: null,
-			storeVersion: 1,
-			map: null,
-
-			init: function(params) {
-				lang.mixin(this, params);
-				this.store = new IndexedDbTileStore(this.storeVersion);
-				this.initLayers();
-			},
-
-			initLayers: function() {
-				for (var name in this.layersConfig) {
-					var options;
-
-					if (this.layersConfig.hasOwnProperty(name)) {
-						options = this.layersConfig[name].options;
-						options.name = name;
-						options.errorTileUrl = options.errorTileUrl || this.errorTileUrl;
-						this.layersConfig[name].map = this.layersConfig[name].map || {};
-
-						// store tiles of each layer in its own object store
-						this.store.objStores.push(name);	// set name of object store
-						this.layers[name] = new TileLayerOffline(this.layersConfig[name].url, options, this.store);
-					}
-				}
-				this.currentBaseLayer = this.layers[this.baseLayerName];
-			},
-
-			saveTiles: function() {
-				var i, cache,
-					maxTiles = 0,
-					nl = document.querySelectorAll('.storageForm input[type=checkbox]'),
-					elTilesToSave = document.getElementById('tilesToSave');
-
-				elTilesToSave.max = 0;
-
-				cache = new TileCache({
-						map: app.map,
-						layer: app.currentBaseLayer
-					});
-
-				for (i = 0; i < nl.length; i++) {
-					if (nl[i].checked) {
-						maxTiles += cache.getNumTiles(app.rectangleBounds, nl[i].value);
-					}
-				}
-				elTilesToSave.max = maxTiles;
-				for (i = 0; i < nl.length; i++) {
-					if (nl[i].checked) {
-						cache.saveTiles(app.rectangleBounds, nl[i].value);
-					}
-				}
-			}
 		};
 
 		app.init({
@@ -262,7 +198,7 @@ require([
             // add options menu to map
 //            menu = new MenuControl();
 
-            // add draw controls to the map
+         // add draw controls to the map
 			drawControl = new L.Control.Draw({
 				edit: {
 					featureGroup: drawnItems
@@ -281,8 +217,7 @@ require([
 			legend = L.control({position: 'topright'});
 			legend.onAdd = function() {
 				return domConstruct.create('div', {
-					innerHTML: '<label for="fldStorageOn">cache tiles</label><input type="checkbox" id="fldStorageOn"><br>' +
-						'<input type="button" id="fldDelStorage" value="delete cache">',
+					innerHTML: '<input type="button" id="fldDelStorage" value="delete cache">',
 					className: 'storageControl'
 				});
 			};
@@ -294,25 +229,25 @@ require([
 				}
 			});
 
-			form = new FormStoreControl({
-				app: app
-			});
+
+			form = new FormStoreControl();
 			form.addTo(map);
 			form.initEvents();
-			form.domNode.style.display = 'none';	// can only be done after placement on map
+			//form.domNode.style.display = 'none';	// can only be done after placement on map
+
 
 			map.on({
 				baselayerchange: function(evt) {
 					app.currentBaseLayer = evt.layer;
 					app.baseLayerName = evt.layer.name;
-					/** TODO enalbe this
+					/** TODO enable this
 					if (app.currentBaseLayer.map.center) {
 						app.map.setView(app.currentBaseLayer.map.center, app.currentBaseLayer.map.zoom);
 					}
 					else if (app.currentBaseLayer.map.zoom) {
 						app.map.setZoom(app.currentBaseLayer.map.zoom);
 					}
-					 */
+					*/
 				},
 				'draw:created': function(evt) {
 					drawnItems.addLayer(evt.layer);
@@ -337,7 +272,7 @@ require([
 
 			for (var i = 0; i < nl.length; i++) {
 				nl[i].addEventListener('click', function() {
-					form.setLabel(this, app.rectangleBounds);
+					app.setLabel(this, app.rectangleBounds);
 				});
 			}
 
