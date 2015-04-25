@@ -50,10 +50,17 @@ h2 {
 
 <script type="text/javascript">
 var dojoConfig = {
+	baseUrl: '/lib',
 	async: true,
 	packages: [
-		{name: 'TileCacher', location: '../../lib/TileCacher'}
-	]
+		{name: 'TileCacher', location: './TileCacher'},
+		{name: 'Leaflet', location: './Leaflet'}
+	],
+	map: {
+	  '*': {
+	    'Leaflet/leaflet': 'Leaflet/leaflet-src'	// map to source version for development
+	  }
+	}
 };
 </script>
 <script type="text/javascript" src="lib/dojo/dojo.js"></script>
@@ -64,11 +71,11 @@ require([
 	'dojo/topic',
 	'TileCacher/app',
 	'TileCacher/FormStoreControl',
-	'lib/Leaflet/leaflet-src.js',
-	'dojo/domReady!'
-], function(require, domConstruct, topic, app, FormStoreControl) {
+	'Leaflet/leaflet'
+], function(require, domConstruct, topic, app, FormStoreControl, L) {
 
-	require(['lib/Leaflet/plugins/draw/leaflet.draw.js', 'lib/Leaflet/plugins/zoomdisplay/leaflet.zoomdisplay.js'
+	require(['Leaflet/plugins/draw/leaflet.draw', 'lib/Leaflet/plugins/zoomdisplay/leaflet.zoomdisplay'
+
 	], function() {
 
 		/******************************************************************
@@ -76,7 +83,6 @@ require([
 		 *   SEE http://leaflet-extras.github.io/leaflet-providers/preview/index.html FOR FREE TILE PROVIDERS
 		 *
 		 * **************************************/
-
 
 		// IMPORTANT:
 		// When adding a new layer to the layersConfig object, update indexedDb version, which calls onupgradeneeded to add new object store
