@@ -29,9 +29,10 @@ h2 {
 	box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
 	border-radius: 5px;
 	width: 140px;
+}
+.storageForm {
 	display: none;
 }
-
 .display {
 	display: block;
 }
@@ -100,7 +101,7 @@ require([
 					attribution: '© <a href="http://geospatial.information.qld.gov.au/ArcGIS/rest/services/QLD/QTopo_WebM/MapServer" target="_blank">State of Queensland</a> (Department of Natural Resources and Mines), 2014'
 				},
 				map: {
-					zoom: 5,
+					zoom: 4,
 					center: [-76, 136]
 				}
 			},
@@ -184,7 +185,7 @@ require([
 			layersConfig: layersConfig,
 			baseLayerName: 'Queensland Topographic',
 			//baseLayerName: 'OpenStreetMap',
-			//baseLayerName: 'Swisstopo',
+			//baseLayerName: 'ESRI WorldImagery',
 			overlays: overlays
 		});
 
@@ -236,6 +237,7 @@ require([
 			});
 
 
+			// TODO: only draw checkboxes from minZoom to maxZoom
 			form = new FormStoreControl();
 			form.addTo(map);
 			form.initEvents();
@@ -257,7 +259,7 @@ require([
 				},
 				'draw:created': function(evt) {
 					drawnItems.addLayer(evt.layer);
-					app.rectangleBounds = evt.layer.getBounds();
+					app.rectangleBounds = evt.layer.getBounds();	// returns LatLngBound, which represent a rectangular geographical area on the map.
 				},
 				'draw:edited': function(evt) {
 					var layers = evt.layers;
@@ -289,7 +291,7 @@ require([
 
 			document.getElementById('buttStorageControl').addEventListener('click', function() {
 				numTiles = 0;
-				app.saveTiles();
+				app.cacheTiles();
 			});
 		}, function(err) {
 			console.log(err);
