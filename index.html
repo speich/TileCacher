@@ -2,301 +2,316 @@
 <!--<html manifest="appcache.manifest">-->
 <html>
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<title>Cache maps offline with web browser</title>
-<link type="text/css" rel="stylesheet" href="lib/reset.css">
-<link type="text/css" rel="stylesheet" href="lib/Leaflet/leaflet.css">
-<link type="text/css" rel="stylesheet" href="lib/Leaflet/plugins/draw/leaflet.draw.css">
-<link type="text/css" rel="stylesheet" href="lib/Leaflet/plugins/zoomdisplay/leaflet.zoomdisplay.css">
-<style type="text/css">
-html, body, #map {
-	width: 100%;
-	height: 100%;
-	font-family: Verdana Arial, Helvetica, sans-serif;
-}
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Cache maps offline with web browser</title>
+    <link type="text/css" rel="stylesheet" href="lib/reset.css">
+    <link type="text/css" rel="stylesheet" href="lib/Leaflet/leaflet.css">
+    <link type="text/css" rel="stylesheet" href="lib/Leaflet/plugins/draw/leaflet.draw.css">
+    <link type="text/css" rel="stylesheet" href="lib/Leaflet/plugins/zoomdisplay/leaflet.zoomdisplay.css">
+    <style type="text/css">
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            font-family: Verdana Arial, Helvetica, sans-serif;
+        }
 
-h2 {
-	font-size: 1.4em;
-}
-.leaflet-control-zoom-display {
-	background: white;
-}
+        h2 {
+            font-size: 1.4em;
+        }
 
-.storageControl, .storageForm {
-	padding: 6px 8px;
-	font-size: 1em;
-	background: white;
-	box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
-	border-radius: 5px;
-	width: 140px;
-}
-.storageForm {
-	display: none;
-}
-.display {
-	display: block;
-}
+        .leaflet-control-zoom-display {
+            background: white;
+        }
 
-.storageForm progress {
-	width: 100%;
-}
-.tileInfo {
-	margin: 1.5em 0;
-}
+        .storageControl, .storageForm {
+            padding: 6px 8px;
+            font-size: 1em;
+            background: white;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            border-radius: 5px;
+            width: 140px;
+        }
 
-</style>
+        .storageForm {
+            display: none;
+        }
+
+        .display {
+            display: block;
+        }
+
+        .storageForm progress {
+            width: 100%;
+        }
+
+        .tileInfo {
+            margin: 1.5em 0;
+        }
+
+    </style>
 </head>
 <body>
 <div id="map"></div>
 
 <script type="text/javascript">
-var dojoConfig = {
-	baseUrl: '/lib',
-	async: true,
-	packages: [
-		{name: 'TileCacher', location: './TileCacher'},
-		{name: 'Leaflet', location: './Leaflet'}
-	],
-	map: {
-	  '*': {
-	    'Leaflet/leaflet': 'Leaflet/leaflet-src'	// map to source version for development
-	  }
-	}
-};
+	var dojoConfig = {
+		baseUrl: '/lib',
+		async: true,
+		packages: [
+			{name: 'TileCacher', location: './TileCacher'},
+			{name: 'Leaflet', location: './Leaflet'}
+		],
+		map: {
+			'*': {
+				'Leaflet/leaflet': 'Leaflet/leaflet-src'	// map to source version for development
+			}
+		}
+	};
 </script>
 <script type="text/javascript" src="lib/dojo/dojo.js"></script>
 <script type="text/javascript">
 require([
-	'require',
-	'dojo/dom-construct',
-	'dojo/topic',
-	'TileCacher/app',
-	'TileCacher/FormStoreControl',
-	'Leaflet/leaflet'
+    'require',
+    'dojo/dom-construct',
+    'dojo/topic',
+    'TileCacher/app',
+    'TileCacher/FormStoreControl',
+    'Leaflet/leaflet'
 ], function(require, domConstruct, topic, app, FormStoreControl, L) {
 
-	require(['Leaflet/plugins/draw/leaflet.draw', 'lib/Leaflet/plugins/zoomdisplay/leaflet.zoomdisplay'
+    require(['Leaflet/plugins/draw/leaflet.draw', 'lib/Leaflet/plugins/zoomdisplay/leaflet.zoomdisplay'
 
-	], function() {
+    ], function() {
 
-		/******************************************************************
-		 *
-		 *   SEE http://leaflet-extras.github.io/leaflet-providers/preview/index.html FOR FREE TILE PROVIDERS
-		 *
-		 * **************************************/
+        /******************************************************************
+         *
+         *   SEE http://leaflet-extras.github.io/leaflet-providers/preview/index.html FOR FREE TILE PROVIDERS
+         *
+         * **************************************/
 
-		// IMPORTANT:
-		// When adding a new layer to the layersConfig object, update indexedDb version, which calls onupgradeneeded to add new object store
-		// e.g. update app.version number or delete whole db
- 		var layersConfig = {
-			'Queensland Topographic': {
-				url: 'https://geospatial.information.qld.gov.au/ArcGIS/rest/services/QLD/QTopoBase_WebM/MapServer/tile/{z}/{y}/{x}',
-				options: {
-					//cacheOnly: true,
-					tms: false,
-					maxZoom: 15,
-					minZoom: 4,
-					zoomOffset: -4,	// service uses wrong z for tiles
-					crossOrigin: 'anonymous',
-					attribution: '© <a href="http://geospatial.information.qld.gov.au/ArcGIS/rest/services/QLD/QTopo_WebM/MapServer" target="_blank">State of Queensland</a> (Department of Natural Resources and Mines), 2014'
-				},
-				map: {
-					zoom: 4,
-					center: [-76, 136]
-				}
-			},
-			OpenStreetMap: {
-				url: 'http://{s}.tile.osm.org/{z}/{x}/{y}.png',
-				options: {
-					subdomains: ['a', 'b', 'c'],
-					crossOrigin: 'anonymous',	// CORS enabled image required for canvas.toDataUrl
-					attribution: '© <a href="http://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
-				}
-			},
-			'Sweden Map': {
-				url: 'http://{s}.eniro.no/geowebcache/service/tms1.0.0/map/{z}/{x}/{y}.png',
-				options: {
-					proxy: 'imageProxy.php',	// proxy in case of cross domain not available
-					tms: true,					// invert y axis
-					subdomains: ['map01', 'map02', 'map03', 'map04'],
-					attribution: '© <a href="http://www.eniro.se/" target="_blank">Eniro/Krak</a>'
-				}
-			},
-			'Sweden Nautical': {
-				url: 'http://{s}.eniro.com/geowebcache/service/tms1.0.0/nautical/{z}/{x}/{y}.png',
-				options: {
-					proxy: 'imageProxy.php',
-					tms: true,
-					subdomains: ['map01', 'map02', 'map03', 'map04'],
-					attribution: '© Kort & Matrikelstyrelsen'
-				}
-			},
-			'Sweden Aerial': {
-				url: 'http://{s}.eniro.no/geowebcache/service/tms1.0.0/aerial/{z}/{x}/{y}.jpeg',
-				options: {
-					proxy: 'imageProxy.php',
-					tms: true,
-					subdomains: ['map01', 'map02', 'map03', 'map04'],
-					attribution: '© BLOM. Lantmäteriet/Metria/respektive kommun'
-				}
-			},
-			'ESRI WorldImagery': {
-				url: 'http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-				options: {
-					crossOrigin: 'anonymous',
-					attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-				}
-			},
-			'USGSTopo Basemap': {
-				url: 'http://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}',
-				options: {
-					proxy: 'imageProxy.php',
-					attribution: 'USGS TNM - National Structures Dataset; USGS TNM - National Transportation Dataset; TomTom Commercial Roads; U.S. Census Bureau - TIGER/Line; USGS TNM - National Boundaries Dataset; USGS TNM - Geographic Names Information System; USGS TNM - National Hydrography Dataset'
-				}
-			},
-			'Swisstopo': {
-				url: 'http://{s}.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/20151231/{z}/{y}/{x}.jpeg',
-				options: {
-					proxy: 'imageProxy.php',
-					minZoom: 14,
-					maxZoom: 26,
-					zoomOffset: 14,
-					subdomains: ['wmts6', 'wmts7', 'wmts8', 'wmts9'],
-					referrer: 'http://map.geo.admin.ch',
-					attribution: '© Data: <a href="http://www.swisstopo.admin.ch/internet/swisstopo/en/home.html" target="_blank">swisstopo</a>'
-				}
-			}
+                // IMPORTANT:
+                // When adding a new layer to the layersConfig object, update indexedDb version, which calls onupgradeneeded to add new object store
+                // e.g. update app.version number or delete whole db
+        var layersConfig = {
+                    'Queensland Topographic': {
+                        url: 'https://geospatial.information.qld.gov.au/ArcGIS/rest/services/QLD/QTopoBase_WebM/MapServer/tile/{z}/{y}/{x}',
+                        options: {
+                            //cacheOnly: true,
+                            tms: false,
+                            maxZoom: 15,
+                            minZoom: 4,
+                            zoomOffset: -4,	// service uses wrong z for tiles
+                            crossOrigin: 'anonymous',
+                            attribution: '© <a href="https://geospatial.information.qld.gov.au/ArcGIS/rest/services/QLD/QTopo_WebM/MapServer" target="_blank">State of Queensland</a> (Department of Natural Resources and Mines), 2014'
+                        },
+                        map: {
+                            zoom: 4,
+                            center: [-76, 136]
+                        }
+                    },
+                    'OpenStreetMap': {
+                        url: 'https://{s}.tile.osm.org/{z}/{x}/{y}.png',
+                        options: {
+                            subdomains: ['a', 'b', 'c'],
+                            crossOrigin: 'anonymous',	// CORS enabled image required for canvas.toDataUrl
+                            attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
+                        }
+                    },
+                    'OpenTopoMap': {
+                        url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+                        options: {
+                            subdomains: ['a', 'b', 'c'],
+                            crossOrigin: 'anonymous',
+                            maxZoom: 17,
+                            attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
+                        }
+                    },
+                    'Sweden Map': {
+                        url: 'http://{s}.eniro.no/geowebcache/service/tms1.0.0/map/{z}/{x}/{y}.png',
+                        options: {
+                            proxy: 'imageProxy.php',	// proxy in case of cross domain not available
+                            tms: true,					// invert y axis
+                            subdomains: ['map01', 'map02', 'map03', 'map04'],
+                            attribution: '© <a href="http://www.eniro.se/" target="_blank">Eniro/Krak</a>'
+                        }
+                    },
+                    'Sweden Nautical': {
+                        url: 'http://{s}.eniro.com/geowebcache/service/tms1.0.0/nautical/{z}/{x}/{y}.png',
+                        options: {
+                            proxy: 'imageProxy.php',
+                            tms: true,
+                            subdomains: ['map01', 'map02', 'map03', 'map04'],
+                            attribution: '© Kort & Matrikelstyrelsen'
+                        }
+                    },
+                    'Sweden Aerial': {
+                        url: 'http://{s}.eniro.no/geowebcache/service/tms1.0.0/aerial/{z}/{x}/{y}.jpeg',
+                        options: {
+                            proxy: 'imageProxy.php',
+                            tms: true,
+                            subdomains: ['map01', 'map02', 'map03', 'map04'],
+                            attribution: '© BLOM. Lantmäteriet/Metria/respektive kommun'
+                        }
+                    },
+                    'ESRI WorldImagery': {
+                        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                        options: {
+                            crossOrigin: 'anonymous',
+                            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+                        }
+                    },
+                    'USGSTopo Basemap': {
+                        url: 'https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}',
+                        options: {
+                            proxy: 'imageProxy.php',
+                            attribution: 'USGS TNM - National Structures Dataset; USGS TNM - National Transportation Dataset; TomTom Commercial Roads; U.S. Census Bureau - TIGER/Line; USGS TNM - National Boundaries Dataset; USGS TNM - Geographic Names Information System; USGS TNM - National Hydrography Dataset'
+                        }
+                    },
+                    'Swisstopo': {
+                        url: 'https://{s}.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/{z}/{y}/{x}.jpeg',
+                        options: {
+                            proxy: 'imageProxy.php',
+                            minZoom: 14,
+                            maxZoom: 26,
+                            zoomOffset: 14,
+                            //subdomains: ['wmts6', 'wmts7', 'wmts8', 'wmts9'],
+                            subdomains: ['wmts100'],
+                            referrer: 'https://map.geo.admin.ch',
+                            attribution: '© Data: <a href="https://www.swisstopo.admin.ch/internet/swisstopo/en/home.html" target="_blank">swisstopo</a>'
+                        }
+                    }
 
-			// TODO: tileLayer order with opacity fails when using storage
-			// TODO: compile list of free GIS services
-			// use tileLayer.wms
-			/*
-			 http://kortforsyningen.kms.dk/?servicename=topo25&client=MapInfo&request=GetCapabilities&service=WMS&version=1.1.1&
-			 http://kortforsyningen.kms.dk/topo25?TICKET=a5c15f682266bad9094e735a97809ca9&LAYERS=topo25_klassisk&TRANSPARENT=TRUE&STYLE=default&SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&STYLES=&FORMAT=image%2Fpng&SRS=EPSG%3A25832&BBOX=840000,6140000,1080000,6380000&WIDTH=256&HEIGHT=256
-			 http://kortforsyningen.dk/webtjenesteliste
-			 */
-		},
+                    // TODO: tileLayer order with opacity fails when using storage
+                    // TODO: compile list of free GIS services
+                    // use tileLayer.wms
+                    /*
+                     http://kortforsyningen.kms.dk/?servicename=topo25&client=MapInfo&request=GetCapabilities&service=WMS&version=1.1.1&
+                     http://kortforsyningen.kms.dk/topo25?TICKET=a5c15f682266bad9094e735a97809ca9&LAYERS=topo25_klassisk&TRANSPARENT=TRUE&STYLE=default&SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&STYLES=&FORMAT=image%2Fpng&SRS=EPSG%3A25832&BBOX=840000,6140000,1080000,6380000&WIDTH=256&HEIGHT=256
+                     http://kortforsyningen.dk/webtjenesteliste
+                     */
+                },
 
-		overlays = {
-			'Drawn items': new L.FeatureGroup()
-		};
+                overlays = {
+                    'Drawn items': new L.FeatureGroup()
+                };
 
-		app.init({
-			layersConfig: layersConfig,
-			baseLayerName: 'Queensland Topographic',
-			//baseLayerName: 'OpenStreetMap',
-			//baseLayerName: 'ESRI WorldImagery',
-			overlays: overlays
-		});
+        app.init({
+            layersConfig: layersConfig,
+            //baseLayerName: 'Swisstopo',
+            //baseLayerName: 'OpenStreetMap',
+            baseLayerName: 'OpenTopoMap',
+            //baseLayerName: 'ESRI WorldImagery',
+            overlays: overlays
+        });
 
-		app.store.connect().then(function() {
-			var map, drawControl, drawnItems, form, legend,	menu,
-				layer = app.layersConfig[app.baseLayerName];
+        app.store.connect().then(function() {
+            var map, drawControl, drawnItems, form, legend, menu,
+                    layer = app.layersConfig[app.baseLayerName];
 
-			// create map with layers after connection to db
-			map = app.map = L.map('map', {
-				center: layer.map.center || [45, 16],
-				zoom: layer.map.zoom || 1,
-				layers: [app.currentBaseLayer, overlays['Drawn items']]	// current layer(s) to display after load
-			});
+            // create map with layers after connection to db
+            map = app.map = L.map('map', {
+                center: layer.map.center || [45, 16],
+                zoom: layer.map.zoom || 2,
+                layers: [app.currentBaseLayer, overlays['Drawn items']]	// current layer(s) to display after load
+            });
 
-			drawnItems = app.overlays['Drawn items'];
+            drawnItems = app.overlays['Drawn items'];
 
             // add options menu to map
 //            menu = new MenuControl();
 
-         // add draw controls to the map
-			drawControl = new L.Control.Draw({
-				edit: {
-					featureGroup: drawnItems
-				},
-				draw: {
-					// only allow to draw rectangles
-					polyline: false,
-					polygon: false,
-					circle: false,
-					marker: false
-				}
-			});
-			map.addControl(drawControl);
-			L.control.layers(app.layers, app.overlays).addTo(map);
+            // add draw controls to the map
+            drawControl = new L.Control.Draw({
+                edit: {
+                    featureGroup: drawnItems
+                },
+                draw: {
+                    // only allow to draw rectangles
+                    polyline: false,
+                    polygon: false,
+                    circle: false,
+                    marker: false
+                }
+            });
+            map.addControl(drawControl);
+            L.control.layers(app.layers, app.overlays).addTo(map);
 
-			legend = L.control({position: 'topright'});
-			legend.onAdd = function() {
-				return domConstruct.create('div', {
-					innerHTML: '<input type="button" id="fldDelStorage" value="delete cache">',
-					className: 'storageControl'
-				});
-			};
-			legend.addTo(map);
-			document.getElementById('fldDelStorage').addEventListener('click', function() {
-				if (window.confirm('Delete all offline map data ?')) {
-					window.indexedDB.deleteDatabase('tileStorage');
-					window.location.reload();
-				}
-			});
-
-
-			// TODO: only draw checkboxes from minZoom to maxZoom
-			form = new FormStoreControl();
-			form.addTo(map);
-			form.initEvents();
-			//form.domNode.style.display = 'none';	// can only be done after placement on map
+            legend = L.control({position: 'topright'});
+            legend.onAdd = function() {
+                return domConstruct.create('div', {
+                    innerHTML: '<input type="button" id="fldDelStorage" value="delete cache">',
+                    className: 'storageControl'
+                });
+            };
+            legend.addTo(map);
+            document.getElementById('fldDelStorage').addEventListener('click', function() {
+                if (window.confirm('Delete all offline map data ?')) {
+                    window.indexedDB.deleteDatabase('tileStorage');
+                    window.location.reload();
+                }
+            });
 
 
-			map.on({
-				baselayerchange: function(evt) {
-					app.currentBaseLayer = evt.layer;
-					app.baseLayerName = evt.layer.name;
-					/** TODO enable this
-					if (app.currentBaseLayer.map.center) {
-						app.map.setView(app.currentBaseLayer.map.center, app.currentBaseLayer.map.zoom);
-					}
-					else if (app.currentBaseLayer.map.zoom) {
-						app.map.setZoom(app.currentBaseLayer.map.zoom);
-					}
-					*/
-				},
-				'draw:created': function(evt) {
-					drawnItems.addLayer(evt.layer);
-					app.rectangleBounds = evt.layer.getBounds();	// returns LatLngBound, which represent a rectangular geographical area on the map.
-				},
-				'draw:edited': function(evt) {
-					var layers = evt.layers;
-
-					layers.eachLayer(function(layer) {
-						// TODO: use all polys and not only last layer
-						app.rectangleBounds = layer.getBounds();
-					});
-				},
-				'draw:deleted': function() {
-					app.rectangleBounds = null;
-				}
-			});
+            // TODO: only draw checkboxes from minZoom to maxZoom
+            form = new FormStoreControl();
+            form.addTo(map);
+            form.initEvents();
+            //form.domNode.style.display = 'none';	// can only be done after placement on map
 
 
-			var nl = document.querySelectorAll('.storageForm input[type=checkbox]'),
-				numTiles = 0;
+            map.on({
+                baselayerchange: function(evt) {
+                    app.currentBaseLayer = evt.layer;
+                    app.baseLayerName = evt.layer.name;
+                    /** TODO enable this
+                     if (app.currentBaseLayer.map.center) {
+                    app.map.setView(app.currentBaseLayer.map.center, app.currentBaseLayer.map.zoom);
+                }
+                     else if (app.currentBaseLayer.map.zoom) {
+                    app.map.setZoom(app.currentBaseLayer.map.zoom);
+                }
+                     */
+                },
+                'draw:created': function(evt) {
+                    drawnItems.addLayer(evt.layer);
+                    app.rectangleBounds = evt.layer.getBounds();	// returns LatLngBound, which represent a rectangular geographical area on the map.
+                },
+                'draw:edited': function(evt) {
+                    var layers = evt.layers;
 
-			for (var i = 0; i < nl.length; i++) {
-				nl[i].addEventListener('click', function() {
-					app.setLabel(this, app.rectangleBounds);
-				});
-			}
+                    layers.eachLayer(function(layer) {
+                        // TODO: use all polys and not only last layer
+                        app.rectangleBounds = layer.getBounds();
+                    });
+                },
+                'draw:deleted': function() {
+                    app.rectangleBounds = null;
+                }
+            });
 
-			topic.subscribe('TileCacher/tile-cached', function() {
-				numTiles++;
-				form.updateProgress(numTiles);
-			});
 
-			document.getElementById('buttStorageControl').addEventListener('click', function() {
-				numTiles = 0;
-				app.cacheTiles();
-			});
-		}, function(err) {
-			console.log(err);
-		});
-	});
+            var nl = document.querySelectorAll('.storageForm input[type=checkbox]'),
+                    numTiles = 0;
+
+            for (var i = 0; i < nl.length; i++) {
+                nl[i].addEventListener('click', function() {
+                    app.setLabel(this, app.rectangleBounds);
+                });
+            }
+
+            topic.subscribe('TileCacher/tile-cached', function() {
+                numTiles++;
+                form.updateProgress(numTiles);
+            });
+
+            document.getElementById('buttStorageControl').addEventListener('click', function() {
+                numTiles = 0;
+                app.cacheTiles();
+            });
+        }, function(err) {
+            console.log(err);
+        });
+    });
 });
 </script>
 </body>
