@@ -4,17 +4,17 @@
 
 if (isset($_GET['img'])) {
 	$arrUrl = parse_url($_GET['img']);
-	$url = (array_key_exists('scheme', $arrUrl) ? $arrUrl['scheme'] : 'http').'://';
-	$url = $url.(array_key_exists('host', $arrUrl) ? $arrUrl['host'] : '');
-	$url = $url.$arrUrl['path'];
+	$url = (array_key_exists('scheme', $arrUrl) ? $arrUrl['scheme'] : 'https').'://';
+	$url .= (array_key_exists('host', $arrUrl) ? $arrUrl['host'] : '');
+	$url .= $arrUrl['path'];
 
 	$path = pathinfo($url);
 
 	if (isset($_GET['ref'])) {
 		$opts = array(
 			'http' => array(
-				'method' => "GET",
-				'header' => "Referer: ".$_GET['ref']."\r\n"
+				'method' => 'GET',
+				'header' => 'Referer: '.$_GET['ref']."\r\n"
 			)
 		);
 		$context = stream_context_create($opts);

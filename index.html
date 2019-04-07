@@ -52,21 +52,20 @@
 </head>
 <body>
 <div id="map"></div>
-
 <script type="text/javascript">
-	var dojoConfig = {
-		baseUrl: '/lib',
-		async: true,
-		packages: [
-			{name: 'TileCacher', location: './TileCacher'},
-			{name: 'Leaflet', location: './Leaflet'}
-		],
-		map: {
-			'*': {
-				'Leaflet/leaflet': 'Leaflet/leaflet-src'	// map to source version for development
-			}
-		}
-	};
+var dojoConfig = {
+    baseUrl: 'lib',
+    async: true,
+    packages: [
+        {name: 'TileCacher', location: './TileCacher'},
+        {name: 'Leaflet', location: './Leaflet'}
+    ],
+    map: {
+        '*': {
+            'Leaflet/leaflet': 'Leaflet/leaflet-src'	// map to source version for development
+        }
+    }
+};
 </script>
 <script type="text/javascript" src="lib/dojo/dojo.js"></script>
 <script type="text/javascript">
@@ -89,9 +88,9 @@ require([
          *
          * **************************************/
 
-                // IMPORTANT:
-                // When adding a new layer to the layersConfig object, update indexedDb version, which calls onupgradeneeded to add new object store
-                // e.g. update app.version number or delete whole db
+        // IMPORTANT:
+        // When adding a new layer to the layersConfig object, update indexedDb version, which calls onupgradeneeded to add new object store
+        // e.g. update app.version number or delete whole db
         var layersConfig = {
                     'Queensland Topographic': {
                         url: 'https://geospatial.information.qld.gov.au/ArcGIS/rest/services/QLD/QTopoBase_WebM/MapServer/tile/{z}/{y}/{x}',
