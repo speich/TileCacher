@@ -5,9 +5,9 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>Cache maps offline with web browser</title>
     <link type="text/css" rel="stylesheet" href="lib/reset.css">
-    <link type="text/css" rel="stylesheet" href="lib/Leaflet/leaflet.css">
-    <link type="text/css" rel="stylesheet" href="lib/Leaflet/plugins/draw/leaflet.draw.css">
-    <link type="text/css" rel="stylesheet" href="lib/Leaflet/plugins/zoomdisplay/leaflet.zoomdisplay.css">
+    <link type="text/css" rel="stylesheet" href="lib/Leaflet/0.7.3/leaflet.css">
+    <link type="text/css" rel="stylesheet" href="lib/Leaflet/1.4.0/plugins/draw-0.4.14/dist/leaflet.draw.css">
+    <link type="text/css" rel="stylesheet" href="lib/Leaflet/1.4.0/plugins/zoomdisplay/leaflet.zoomdisplay.css">
     <style type="text/css">
         html, body, #map {
             width: 100%;
@@ -58,16 +58,18 @@ var dojoConfig = {
     async: true,
     packages: [
         {name: 'TileCacher', location: './TileCacher'},
-        {name: 'Leaflet', location: './Leaflet'}
+        {name: 'Leaflet', location: './Leaflet'},
+        {name: 'draw', location: 'Leaflet/1.4.0/plugins/draw-0.4.14/dist'},
+        {name: 'zoomdisplay', location: 'Leaflet/1.4.0/plugins/zoomdisplay'}
     ],
     map: {
         '*': {
-            'Leaflet/leaflet': 'Leaflet/leaflet-src'	// map to source version for development
+            'Leaflet/leaflet': 'Leaflet/0.7.3/leaflet-src'	// map to source version for development
         }
     }
 };
 </script>
-<script type="text/javascript" src="lib/dojo/dojo.js"></script>
+<script type="text/javascript" src="lib/dojo/dojo-1.15.0.js"></script>
 <script type="text/javascript">
 require([
     'require',
@@ -78,7 +80,7 @@ require([
     'Leaflet/leaflet'
 ], function(require, domConstruct, topic, app, FormStoreControl, L) {
 
-    require(['Leaflet/plugins/draw/leaflet.draw', 'lib/Leaflet/plugins/zoomdisplay/leaflet.zoomdisplay'
+    require(['draw/leaflet.draw', 'zoomdisplay/leaflet.zoomdisplay'
 
     ], function() {
 
